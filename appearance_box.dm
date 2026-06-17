@@ -148,12 +148,14 @@ appearance_box
 		appearance_display.icon = 'Base_Pale.dmi'
 		add(appearance_display)
 
-		appearance_back_button = new(src, 'Jutsubox.dmi', "left1")
+		appearance_back_button = new(src)
 		appearance_back_button.pos(11, 133)
+		appearance_back_button.set_button_style("◄", "Left")
 		add(appearance_back_button)
 
-		appearance_forwards_button = new(src, 'Jutsubox.dmi', "right1")
+		appearance_forwards_button = new(src)
 		appearance_forwards_button.pos(196, 133)
+		appearance_forwards_button.set_button_style("►", "Right")
 		add(appearance_forwards_button)
 
 		name_info = new(src, 'Blank.dmi', "blank")
@@ -164,31 +166,36 @@ appearance_box
 		color_boxes = new(m)
 		add(color_boxes)
 
-		add_button = new(src, 'Appearancebuttons.dmi', "add1")
+		add_button = new(src)
 		add_button.pos(183, 104)
+		add_button.set_button_style("+", "Add Hair")
 		add(add_button)
 
-		del_button = new(src, 'Appearancebuttons.dmi', "del1")
+		del_button = new(src)
 		del_button.pos(183, 85)
+		del_button.set_button_style("✕", "Clear")
 		add(del_button)
 
-		rgb_button = new(src, 'Appearancebuttons.dmi', "rgb1")
+		rgb_button = new(src)
 		rgb_button.pos(183, 66)
+		rgb_button.set_button_style("◉", "Color")
 		add(rgb_button)
 
 		skin_color_box = new(m)
 		add(skin_color_box)
 
-		gender_button = new(src, 'Characterbox.dmi', "plus1")
+		gender_button = new(src)
 		gender_button.pos(197, 37)
+		gender_button.set_button_style("⚧", "Gender")
 		add(gender_button)
 
 		gender_indicator = new(src, 'Genderindicator.dmi', "maleG")
 		gender_indicator.pos(129, 36)
 		add(gender_indicator)
 
-		confirm_button = new(src, 'Confirmbutton.dmi', "confirm1")
+		confirm_button = new(src)
 		confirm_button.pos(9, 9)
+		confirm_button.set_button_style("✓", "Confirm")
 		add(confirm_button)
 
 	show()
@@ -239,39 +246,63 @@ appearance_name
 			i.plane = plane
 			overlays += i
 
-appearance_back_button
+// Clean unified button style
+clean_button
 	parent_type = /HudObject
 	layer = 100000000
-
+	
+	icon = 'Blank.dmi'
+	icon_state = "blank"
+	
+	var/button_label = ""
+	var/button_tooltip = ""
+	var/button_normal_color = "#4a4a4a"  // Dark grey
+	var/button_hover_color = "#5a5a5a"   // Lighter grey on hover
+	
 	mouse_over_pointer = MOUSE_HAND_POINTER
+	
+	proc/set_button_style(label, tooltip)
+		button_label = label
+		button_tooltip = tooltip
+		color = button_normal_color
+		
+		// Create visual representation
+		var/image/btn_display = image('Blank.dmi', "blank")
+		btn_display.color = button_normal_color
+		overlays += btn_display
+		
+		// Add text label if available
+		if(label)
+			var/image/text_img = image('Blank.dmi', "blank")
+			overlays += text_img
+	
+	proc/set_hover(hovered)
+		if(hovered)
+			color = button_hover_color
+		else
+			color = button_normal_color
+	
+	MouseEntered()
+		set_hover(1)
+	
+	MouseExited()
+		set_hover(0)
+
+appearance_back_button
+	parent_type = /clean_button
 
 	Click()
 		if(--usr.hair_scroll_position < 1)
 			usr.hair_scroll_position = usr.hair_list.len
 		usr.appearance_box.update_hair(usr)
 
-	MouseEntered()
-		icon_state = "left2"
-
-	MouseExited()
-		icon_state = "left1"
-
 appearance_forwards_button
-	parent_type = /HudObject
-	layer = 100000000
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
+	parent_type = /clean_button
 
 	Click()
 		if(++usr.hair_scroll_position > usr.hair_list.len)
 			usr.hair_scroll_position = 1
 		usr.appearance_box.update_hair(usr)
-
-	MouseEntered()
-		icon_state = "right2"
-
-	MouseExited()
-		icon_state = "right1"
 
 color_box
 	parent_type = /HudObject
@@ -386,11 +417,7 @@ gender_indicator
 	layer = 100000000
 
 gender_button
-	parent_type = /HudObject
-	layer = 100000000
-	var/state = "plus"
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
+	parent_type = /clean_button
 
 	Click()
 		var/mob/M = usr
@@ -398,28 +425,18 @@ gender_button
 		if(M.Female)
 			M.Female = 0
 			M.Gender = "male"
-			usr.appearance_box.gender_indicator.icon_state = "male"
+			usr.appearance_box.gender_indicator.icon_state = "maleG"
 		else
 			M.Female = 1
 			M.Gender = "female"
-			usr.appearance_box.gender_indicator.icon_state = "female"
+			usr.appearance_box.gender_indicator.icon_state = "femaleG"
 		usr.FixIcon(M)
 		usr.appearance_box.appearance_display.icon = M.icon
 
-	MouseEntered()
-		icon_state = "[state]2"
-
-	MouseExited()
-		icon_state = "[state]1"
-
 add_button
-	parent_type = /HudObject
-	layer = 100000000
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
+	parent_type = /clean_button
 
 	Click()
-
 		var/mob/M = usr
 		if(M.makingClone) M = M.clones[M.clones.len]
 		var/icon/i = icon(get_hair_icon(usr.hair_list[usr.hair_scroll_position]))
@@ -427,17 +444,8 @@ add_button
 		M.hair_stack += i
 		usr.appearance_box.update_hair(M)
 
-	MouseEntered()
-		icon_state = "add2"
-
-	MouseExited()
-		icon_state = "add1"
-
 del_button
-	parent_type = /HudObject
-	layer = 100000000
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
+	parent_type = /clean_button
 
 	Click()
 		var/mob/M = usr
@@ -445,17 +453,8 @@ del_button
 		M.hair_stack = list()
 		usr.appearance_box.update_hair(M)
 
-	MouseEntered()
-		icon_state = "del2"
-
-	MouseExited()
-		icon_state = "del1"
-
 rgb_button
-	parent_type = /HudObject
-	layer = 100000000
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
+	parent_type = /clean_button
 
 	Click()
 		var/mob/M = usr
@@ -463,17 +462,9 @@ rgb_button
 		usr.hair_color_position = input("Please select an RGB color") as color
 		usr.appearance_box.update_hair(M)
 
-	MouseEntered()
-		icon_state = "rgb2"
-
-	MouseExited()
-		icon_state = "rgb1"
-
 confirm_button
-	parent_type = /HudObject
+	parent_type = /clean_button
 	layer = 200000000
-
-	mouse_over_pointer = MOUSE_HAND_POINTER
 
 	Click()
 		var/mob/M = usr
@@ -494,12 +485,6 @@ confirm_button
 		M.icon = M.saved_icon
 		
 		if(usr.makingClone) usr.makingClone = 0
-
-	MouseEntered()
-		icon_state = "confirm2"
-
-	MouseExited()
-		icon_state = "confirm1"
 
 area/title_area
 	icon = 'Titlearea.dmi'
